@@ -1,5 +1,7 @@
+import io.qameta.allure.Step;
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.RestAssured;
+import io.restassured.response.Response;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -16,14 +18,19 @@ public class OrdersListTests {
 
     @Test
     @DisplayName("Получение списка заказов")
-    public void shouldCreateCourier() {
-        given()
-                .header("Content-type", "application/json")
-                .when()
-                .get("/api/v1/orders?limit=10&page=0")
+    public void shouldReturnOrdersList() {
+        getOrdersList()
                 .then()
                 .assertThat()
                 .statusCode(200)
                 .body("orders", hasSize(greaterThan(0)));
+    }
+
+    @Step("Получение списка заказов")
+    private Response getOrdersList() {
+        return given()
+                .header("Content-type", "application/json")
+                .when()
+                .get("/api/v1/orders?limit=10&page=0");
     }
 }

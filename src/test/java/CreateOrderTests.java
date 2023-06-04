@@ -1,5 +1,7 @@
+import io.qameta.allure.Step;
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.RestAssured;
+import io.restassured.response.Response;
 import model.Order;
 import org.junit.Before;
 import org.junit.Test;
@@ -17,7 +19,7 @@ import static org.hamcrest.Matchers.not;
 @RunWith(value = Parameterized.class)
 public class CreateOrderTests {
 
-    private List<String> color;
+    private final List<String> color;
 
     public CreateOrderTests(List<String> color) {
         this.color = color;
@@ -45,14 +47,19 @@ public class CreateOrderTests {
 
         order.setColor(color);
 
-        given()
+        create(order)
+                .then()
+                .assertThat().statusCode(201)
+                .body("track", not(blankOrNullString()));
+    }
+
+    @Step("Создание заказа")
+    private Response create(Order order) {
+        return given()
                 .header("Content-type", "application/json")
                 .and()
                 .body(order)
                 .when()
-                .post("/api/v1/orders")
-                .then()
-                .assertThat().statusCode(201)
-                .body("track", not(blankOrNullString()));
+                .post("/api/v1/orders");
     }
 }

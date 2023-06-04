@@ -1,10 +1,15 @@
 package model;
 
-import java.time.LocalDate;
+import com.github.javafaker.Faker;
+
+import java.text.Format;
+import java.text.SimpleDateFormat;
 import java.util.List;
-import java.util.Random;
+import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 public class Order {
+    private final static Faker faker = new Faker(new Locale("ru_RU"));
     private String firstName;
     private String lastName;
     private String address;
@@ -15,20 +20,18 @@ public class Order {
     private String comment;
     private List<String> color;
 
-    private final static Random random = new Random();
-
     public static Order random() {
-        int number = random.nextInt(10000000);
 
         Order order = new Order();
+        Format dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
-        order.firstName = "Bob" + number;
-        order.lastName = "Smith" + number;
-        order.address = "Dubna";
-        order.metroStation = random.nextInt(10);
-        order.phone = "+7" + number;
-        order.rentTime = random.nextInt(6);
-        order.deliveryDate = LocalDate.now().toString();
+        order.firstName = faker.name().firstName();
+        order.lastName = faker.name().lastName();
+        order.address = faker.address().streetAddress();
+        order.metroStation = faker.number().numberBetween(1, 10);
+        order.phone = faker.phoneNumber().phoneNumber();
+        order.rentTime = faker.number().numberBetween(1, 20);
+        order.deliveryDate = dateFormat.format(faker.date().future(10, TimeUnit.DAYS));
         order.comment = "Faster!";
 
         return order;
@@ -104,5 +107,20 @@ public class Order {
 
     public void setColor(List<String> color) {
         this.color = color;
+    }
+
+    @Override
+    public String toString() {
+        return "Order{" +
+                "firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", address='" + address + '\'' +
+                ", metroStation=" + metroStation +
+                ", phone='" + phone + '\'' +
+                ", rentTime=" + rentTime +
+                ", deliveryDate='" + deliveryDate + '\'' +
+                ", comment='" + comment + '\'' +
+                ", color=" + color +
+                '}';
     }
 }

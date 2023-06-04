@@ -1,20 +1,29 @@
 import io.qameta.allure.Description;
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.RestAssured;
+import io.restassured.response.Response;
 import model.Courier;
-import model.CourierLogin;
-import model.LoginResponse;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.equalTo;
 
 public class CreateCourierTests {
 
+    private Courier courierToDelete;
+
     @Before
     public void setUp() {
         RestAssured.baseURI = "https://qa-scooter.praktikum-services.ru";
+    }
+
+    @After
+    public void clean() {
+        if (courierToDelete != null) {
+            CourierSteps.delete(courierToDelete);
+            courierToDelete = null;
+        }
     }
 
     @Test
@@ -23,18 +32,11 @@ public class CreateCourierTests {
     public void shouldCreateCourier() {
         Courier courier = Courier.random();
 
-        given()
-                .header("Content-type", "application/json")
-                .and()
-                .body(courier)
-                .when()
-                .post("/api/v1/courier")
+        create(courier)
                 .then()
                 .assertThat()
                 .statusCode(201)
                 .body("ok", equalTo(true));
-
-        deleteCourier(courier);
     }
 
     @Test
@@ -42,26 +44,14 @@ public class CreateCourierTests {
     public void shouldNotCreateSameCourier() {
         Courier courier = Courier.random();
 
-        given()
-                .header("Content-type", "application/json")
-                .and()
-                .body(courier)
-                .when()
-                .post("/api/v1/courier")
+        create(courier)
                 .then()
                 .assertThat().statusCode(201);
 
-        given()
-                .header("Content-type", "application/json")
-                .and()
-                .body(courier)
-                .when()
-                .post("/api/v1/courier")
+        create(courier)
                 .then()
                 .assertThat().statusCode(409)
                 .body("message", equalTo("Этот логин уже используется. Попробуйте другой."));
-
-        deleteCourier(courier);
     }
 
     @Test
@@ -71,12 +61,7 @@ public class CreateCourierTests {
 
         courier.setLogin(null);
 
-        given()
-                .header("Content-type", "application/json")
-                .and()
-                .body(courier)
-                .when()
-                .post("/api/v1/courier")
+        create(courier)
                 .then()
                 .assertThat().statusCode(400)
                 .body("message", equalTo("Недостаточно данных для создания учетной записи"));
@@ -89,37 +74,18 @@ public class CreateCourierTests {
 
         courier.setPassword(null);
 
-        given()
-                .header("Content-type", "application/json")
-                .and()
-                .body(courier)
-                .when()
-                .post("/api/v1/courier")
+        create(courier)
                 .then()
                 .assertThat().statusCode(400)
                 .body("message", equalTo("Недостаточно данных для создания учетной записи"));
     }
 
-    private void deleteCourier(Courier courier) {
-        CourierLogin courierLogin = CourierLogin.of(courier);
+    private Response create(Courier courier) {
+        Response response = CourierSteps.create(courier);
 
-        LoginResponse loginResponse = given()
-                .header("Content-type", "application/json")
-                .and()
-                .body(courierLogin)
-                .when()
-                .post("/api/v1/courier/login")
-                .then()
-                .assertThat().statusCode(200)
-                .extract().as(LoginResponse.class);
-
-        given()
-                .header("Content-type", "application/json")
-                .and()
-                .body(courier)
-                .when()
-                .delete("/api/v1/courier/" + loginResponse.getId())
-                .then()
-                .assertThat().statusCode(200);
+        if (response.getStatusCode() == 201) {
+            courierToDelete = courier;
+        }
+        return response;
     }
 }

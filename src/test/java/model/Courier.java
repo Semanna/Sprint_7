@@ -1,13 +1,24 @@
 package model;
 
-import java.util.Random;
+import com.github.javafaker.Faker;
+
+import java.util.Locale;
 
 public class Courier {
+    private final static Faker faker = new Faker(new Locale("ru_RU"));
     private String login;
     private String password;
     private String firstName;
 
-    private final static Random random = new Random();
+    public static Courier random() {
+        Courier courier = new Courier();
+
+        courier.firstName = faker.name().firstName();
+        courier.login = faker.internet().emailAddress();
+        courier.password = faker.internet().password();
+
+        return courier;
+    }
 
     public String getLogin() {
         return login;
@@ -33,16 +44,12 @@ public class Courier {
         this.firstName = firstName;
     }
 
-    public static Courier random() {
-        Courier courier = new Courier();
-
-        int number = random.nextInt(10000000);
-        courier.firstName = "Bob" + number;
-        courier.login = "Bob" + number;
-        courier.password = "pass" + number;
-
-        return courier;
+    @Override
+    public String toString() {
+        return "Courier{" +
+                "login='" + login + '\'' +
+                ", password='" + password + '\'' +
+                ", firstName='" + firstName + '\'' +
+                '}';
     }
-
-
 }

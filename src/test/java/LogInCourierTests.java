@@ -1,19 +1,34 @@
-
 import io.qameta.allure.Description;
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.RestAssured;
+import io.restassured.response.Response;
 import model.Courier;
 import model.CourierLogin;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.blankOrNullString;
 import static org.hamcrest.Matchers.not;
 
 
 public class LogInCourierTests {
+
+    private Courier courierToDelete;
+
+    @Before
+    public void setUp() {
+        RestAssured.baseURI = "https://qa-scooter.praktikum-services.ru";
+    }
+
+    @After
+    public void clean() {
+        if (courierToDelete != null) {
+            CourierSteps.delete(courierToDelete);
+            courierToDelete = null;
+        }
+    }
 
     @Test
     @DisplayName("Авторизация курьера")
@@ -22,30 +37,15 @@ public class LogInCourierTests {
         Courier courier = Courier.random();
         CourierLogin courierLogin = CourierLogin.of(courier);
 
-        given()
-                .header("Content-type", "application/json")
-                .and()
-                .body(courier)
-                .when()
-                .post("/api/v1/courier")
+        create(courier)
                 .then()
                 .assertThat()
                 .statusCode(201);
 
-        given()
-                .header("Content-type", "application/json")
-                .and()
-                .body(courierLogin)
-                .when()
-                .post("/api/v1/courier/login")
+        CourierSteps.login(courierLogin)
                 .then()
                 .assertThat().statusCode(200)
                 .body("id", not(blankOrNullString()));
-    }
-
-    @Before
-    public void setUp() {
-        RestAssured.baseURI = "https://qa-scooter.praktikum-services.ru";
     }
 
     @Test
@@ -56,12 +56,7 @@ public class LogInCourierTests {
         courierLogin.setPassword("");
         courierLogin.setLogin("login");
 
-        given()
-                .header("Content-type", "application/json")
-                .and()
-                .body(courierLogin)
-                .when()
-                .post("/api/v1/courier/login")
+        CourierSteps.login(courierLogin)
                 .then()
                 .assertThat().statusCode(400)
                 .body("message", equalTo("Недостаточно данных для входа"));
@@ -74,12 +69,7 @@ public class LogInCourierTests {
 
         courierLogin.setPassword("pass");
 
-        given()
-                .header("Content-type", "application/json")
-                .and()
-                .body(courierLogin)
-                .when()
-                .post("/api/v1/courier/login")
+        CourierSteps.login(courierLogin)
                 .then()
                 .assertThat().statusCode(400)
                 .body("message", equalTo("Недостаточно данных для входа"));
@@ -91,14 +81,18 @@ public class LogInCourierTests {
         Courier courier = Courier.random();
         CourierLogin courierLogin = CourierLogin.of(courier);
 
-        given()
-                .header("Content-type", "application/json")
-                .and()
-                .body(courierLogin)
-                .when()
-                .post("/api/v1/courier/login")
+        CourierSteps.login(courierLogin)
                 .then()
                 .assertThat().statusCode(404)
                 .body("message", equalTo("Учетная запись не найдена"));
+    }
+
+    private Response create(Courier courier) {
+        Response response = CourierSteps.create(courier);
+
+        if (response.getStatusCode() == 201) {
+            courierToDelete = courier;
+        }
+        return response;
     }
 }
